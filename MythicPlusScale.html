@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+        <html lang="en">
+
+        <head>
+        <style>
+		table {
+        margin-left: auto;
+        margin-right: auto;
+        }
+        </style>
+        <meta charset="UTF-8" />
+        <meta name="viewpoint" content="width=\, initial-scale=1.0" />
+        <title>A Team</title>
+        </head>
+
+        <body style="background-color: #44546A; text-align:center">
+        <h1 style="color: #D6DCE4"> <span id="characterName"></span></h1>
+        <h2 style="color: #D6DCE4"><span id="characterScore"></span></h2>
+		<label style="color: #D6DCE4;" for="raiderPage">Cut Offs</label>
+		<table>
+			<tr id="tb_row_cutoff"></tr>
+		</table>
+		
+		<table style="height: 20px;" ></table>
+		<label style="color: #D6DCE4" for="raiderPage">Another Team</label>
+        <table>
+			<tr id="tb_headers"></tr>
+			<tr id="tb_A_row_01"></tr>
+			<tr id="tb_A_row_02"></tr>
+			<tr id="tb_A_row_03"></tr>
+			<tr id="tb_A_row_04"></tr>
+			<tr id="tb_A_row_05"></tr>
+        </table>
+		
+		<table style="height: 20px;" ></table>
+		<label style="color: #D6DCE4" for="raiderPage">Night Crew</label>
+        <table>
+			<tr id="tb_headers"></tr>
+			<tr id="tb_B_row_01"></tr>
+			<tr id="tb_B_row_02"></tr>
+			<tr id="tb_B_row_03"></tr>
+			<tr id="tb_B_row_04"></tr>
+			<tr id="tb_B_row_05"></tr>
+        </table>
+		
+		<table style="height: 20px;" ></table>
+		<label style="color: #D6DCE4" for="raiderPage">Notable Mentions</label>
+		<table>
+			<tr id="tb_NM_row_01"></tr>
+			<tr id="tb_NM_row_02"></tr>
+		</table>
+
+        <script>
+		
+		
+		// ========== Players ========== //
+		
+		// URLs to each player
+		var rowA01URL = "https://raider.io/characters/us/moon-guard/Damshethicc";
+		var rowA02URL = "https://raider.io/characters/us/proudmoore/Valont";
+		var rowA03URL = "https://raider.io/characters/us/proudmoore/Zelotry";
+		var rowA04URL = "https://raider.io/characters/us/proudmoore/Kostility";
+		var rowA05URL = "https://raider.io/characters/us/sargeras/M%C3%A1xwell";
+		
+		var rowB01URL = "https://raider.io/characters/us/proudmoore/Louhdru";
+		var rowB02URL = "https://raider.io/characters/us/sargeras/Stoopo";
+		var rowB03URL = "https://raider.io/characters/us/silver-hand/Cenjeru";
+		var rowB04URL = "https://raider.io/characters/us/proudmoore/Arkovo";
+		var rowB05URL = "https://raider.io/characters/us/sargeras/Zaroka";
+		//var rowB05URL = "https://raider.io/characters/us/sargeras/Zieavqdh";
+		
+		var rowNM01URL = "https://raider.io/characters/us/scarlet-crusade/Samsonknight";
+		var rowNM02URL = "https://raider.io/characters/us/sargeras/Zieavqdh";
+
+		let allPlayers = [];
+		allPlayers.push(rowA01URL,rowA02URL,rowA03URL,rowA04URL,rowA05URL,rowB01URL,rowB02URL,rowB03URL,rowB04URL,rowB05URL);
+
+		var highestScore = 0;
+		var lowestScore = 1000;
+
+		// ========== Functions ========== //
+
+		// Build each row of the page
+		function BuildPage(){
+			let div_cutoff = document.getElementById("tb_row_cutoff");
+			cutOffScoreRow(div_cutoff);
+			
+			let div_A01 = document.getElementById("tb_A_row_01");	
+			buildPlayerRow(rowA01URL, div_A01);
+			let div_A02 = document.getElementById("tb_A_row_02");
+			buildPlayerRow(rowA02URL, div_A02);
+			let div_A03 = document.getElementById("tb_A_row_03");
+			buildPlayerRow(rowA03URL, div_A03);
+			let div_A04 = document.getElementById("tb_A_row_04");
+			buildPlayerRow(rowA04URL, div_A04);
+			let div_A05 = document.getElementById("tb_A_row_05");
+			buildPlayerRow(rowA05URL, div_A05);
+			
+			let div_B01 = document.getElementById("tb_B_row_01");	
+			buildPlayerRow(rowB01URL, div_B01);
+			let div_B02 = document.getElementById("tb_B_row_02");
+			buildPlayerRow(rowB02URL, div_B02);
+			let div_B03 = document.getElementById("tb_B_row_03");
+			buildPlayerRow(rowB03URL, div_B03);
+			let div_B04 = document.getElementById("tb_B_row_04");
+			buildPlayerRow(rowB04URL, div_B04);
+			let div_B05 = document.getElementById("tb_B_row_05");
+			buildPlayerRow(rowB05URL, div_B05);
+			
+			let div_NM01 = document.getElementById("tb_NM_row_01");
+			buildPlayerRow(rowNM01URL, div_NM01);
+			let div_NM02 = document.getElementById("tb_NM_row_02");
+			buildPlayerRow(rowNM02URL, div_NM02);
+		}
+
+
+		// Get the URL - player score for each dungeon
+        function getApiUrl_Dungeons(url){
+			var urlArray = url.split("/");
+			var urlIndex = urlArray.indexOf("characters");
+
+			var region = "";
+			var realm = "";
+			var name = "";
+
+			region = urlArray[urlIndex + 1];
+			realm = urlArray[urlIndex + 2];
+			name = urlArray[urlIndex + 3];
+
+			<!--- https://raider.io/api/v1/characters/profile?region=us&realm=moon-guard&name=Damshethicc&fields=mythic_plus_best_runs --->
+			api_url_dungeons = "https://raider.io/api/v1/characters/profile?region=" + region + "&realm=" + realm + "&name=" + name + "&fields=mythic_plus_best_runs";        
+			return api_url_dungeons;
+        }
+		
+		
+		// Get the URL - player overall score and image
+        function getApiUrl_Player(url){
+			var urlArray = url.split("/");
+			var urlIndex = urlArray.indexOf("characters");
+
+			var region = "";
+			var realm = "";
+			var name = "";
+
+			region = urlArray[urlIndex + 1];
+			realm = urlArray[urlIndex + 2];
+			name = urlArray[urlIndex + 3];
+
+			<!--- https://raider.io/api/v1/characters/profile?region=us&realm=moon-guard&name=Damshethicc&fields=mythic_plus_scores_by_season:current --->
+			api_url_player = "https://raider.io/api/v1/characters/profile?region=" + region + "&realm=" + realm + "&name=" + name + "&fields=mythic_plus_scores_by_season:current";
+			return api_url_player;
+        }
+		
+		
+		// Get the URL - player world rank
+		function getApiUrl_Ranks(url){
+			var urlArray = url.split("/");
+			var urlIndex = urlArray.indexOf("characters");
+
+			var region = "";
+			var realm = "";
+			var name = "";
+
+			region = urlArray[urlIndex + 1];
+			realm = urlArray[urlIndex + 2];
+			name = urlArray[urlIndex + 3];
+			
+			<!--- https://raider.io/api/v1/characters/profile?region=us&realm=moon-guard&name=Damshethicc&fields=mythic_plus_ranks --->
+			api_url_rank =  "https://raider.io/api/v1/characters/profile?region=" + region + "&realm=" + realm + "&name=" + name + "&fields=mythic_plus_ranks";
+			return api_url_rank;
+		}
+		
+		
+		// Get cutoff data
+		function getCutoffData(){
+			//var cutoffURL = "https://raider.io/api/v1/mythic-plus/season-cutoffs?season=season-mn-1&region=us";
+			//var response_cutoff = await fetch(cutoffURL);
+			//var data_cutoff = await response_cutoff.json();
+		}
+		
+		
+		//
+		async function getHighLowScore(){
+			var tempHigh = 0
+			var tempLow = 1000
+			var totalScore = 0
+			var totalCount = 0
+			for(var i = 0; i < allPlayers.length; i++){
+				var api_url_dungeons = getApiUrl_Dungeons(allPlayers[i]);        
+				var response_dungeons = await fetch(api_url_dungeons);
+				var data_dungeons = await response_dungeons.json();
+				var bestDungeons = data_dungeons.mythic_plus_best_runs;
+				for(var j = 0; j < bestDungeons.length; j++){
+					if (bestDungeons[j].score > tempHigh) {
+						tempHigh = bestDungeons[j].score
+					}
+					if (bestDungeons[j].score < tempLow) {
+						tempLow = bestDungeons[j].score
+					}
+					totalScore = totalScore + bestDungeons[j].score
+					totalCount = totalCount + 1
+				}
+			}
+			var averageScore = totalScore / totalCount
+			
+			highestScore = tempHigh
+			lowestScore = tempLow
+			
+			if (tempHigh-tempLow > 30){
+				highestScore = averageScore + 15
+				lowestScore = averageScore - 15
+			}
+			
+			// Test
+			// highestScore = 450
+			// lowestScore = 400
+			
+			BuildPage();
+		}
+		
+		
+		// Default Style
+		function setElementStyle(element){
+			element.style.borderStyle = "solid";
+			element.style.borderWidth = "1px";
+			element.style.borderRadius = "4px";
+			element.style.borderColor = "black";
+			element.style.width = "50px"
+			element.style.height = "50px"
+			element.style.backgroundColor = "#93aac9"
+			element.style.padding = "2px";
+		}
+		
+		
+		// Build the row off a given player
+		async function buildPlayerRow(playerURL, playerDiv){
+			var api_url_dungeons = getApiUrl_Dungeons(playerURL);        
+			var response_dungeons = await fetch(api_url_dungeons);
+			var data_dungeons = await response_dungeons.json();
+			var api_url_player = getApiUrl_Player(playerURL);
+			var response_player = await fetch(api_url_player);
+			var data_player = await response_player.json();
+			var api_url_ranks = getApiUrl_Ranks(playerURL);
+			var response_ranks = await fetch(api_url_ranks);
+			var data_ranks = await response_ranks.json();
+			var cutoffURL = "https://raider.io/api/v1/mythic-plus/season-cutoffs?season=season-mn-1&region=us";
+			var response_cutoff = await fetch(cutoffURL);
+			var data_cutoff = await response_cutoff.json();
+			
+			var bestDungeons = data_dungeons.mythic_plus_best_runs;
+			
+			//thumbnail
+			let cellThumbnail = document.createElement("td");
+			setElementStyle(cellThumbnail)
+			cellThumbnail.style.backgroundImage = "url(" + data_player.thumbnail_url + ")";
+			cellThumbnail.style.backgroundSize = "55px 55px";
+			playerDiv.appendChild(cellThumbnail);
+			//name
+			let cellName = document.createElement("td");
+			setElementStyle(cellName)
+			cellName.style.width = "120px"
+			let textName = document.createTextNode(data_player.name);
+			cellName.appendChild(textName);
+			playerDiv.appendChild(cellName);
+			//score and rank
+			let cellScore = document.createElement("td");
+			setElementStyle(cellScore)
+			cellScore.style.width = "80px"
+			let textScore = document.createTextNode(data_player.mythic_plus_scores_by_season[0].scores.all);
+			let textRank = document.createTextNode((data_ranks.mythic_plus_ranks.overall.region / data_cutoff.cutoffs.p990.all.totalPopulationCount*100).toFixed(1) + " %");
+			cellScore.appendChild(textScore);
+			cellScore.appendChild(document.createElement("br"));
+			cellScore.appendChild(textRank);
+			playerDiv.appendChild(cellScore);
+			
+			let cellDungeon = document.createElement("td");
+			setElementStyle(cellDungeon)
+			cellDungeon.style.width = "500px"
+			cellDungeon.style.position = "relative"
+			//dungeons
+			for(var i = bestDungeons.length-1; i >= 0; i--){
+				let dungeonContainer = document.createElement("div");
+				dungeonContainer.style.textAlign = "center";
+				let dungeonImg = document.createElement("img");
+				dungeonImg.src = "" + bestDungeons[i].icon_url + "";
+				dungeonImg.style.width = "30px";
+				dungeonImg.style.position = "absolute"
+				var offsetPercent = (bestDungeons[i].score-lowestScore)/(highestScore-lowestScore)*100
+				offsetPercent = Math.max(offsetPercent, 0)
+				offsetPercent = Math.min(offsetPercent, 100)
+
+				offsetPercent = offsetPercent * (500-34)/500
+				dungeonImg.style.left = "" + offsetPercent + "%";
+				dungeonImg.style.top = "" + i%2*36 + "%"
+				dungeonImg.style.padding = "2px"
+				
+				let hoverDungeonText = document.createElement('span');
+				setElementStyle(hoverDungeonText)
+				hoverDungeonText.textContent = bestDungeons[i].score + "  " + bestDungeons[i].dungeon + "";
+				hoverDungeonText.style.display = 'none'; // Hide by default
+				hoverDungeonText.style.position = "absolute";
+				hoverDungeonText.style.zIndex = "9999";
+				hoverDungeonText.style.backgroundColor = "white";
+				hoverDungeonText.style.width = 'max-content'
+				hoverDungeonText.style.height = 'max-content'
+				hoverDungeonText.style.transform = 'translate(0, -50%)';
+				
+
+				// Show text on hover
+				dungeonImg.addEventListener('mouseenter', () => {
+					hoverDungeonText.style.display = 'block';
+				});
+
+				// Hide text when leaving
+				dungeonImg.addEventListener('mouseleave', () => {
+					hoverDungeonText.style.display = 'none';
+				});
+				
+				
+				dungeonContainer.appendChild(dungeonImg);
+				dungeonContainer.appendChild(hoverDungeonText);
+				cellDungeon.appendChild(dungeonContainer);
+				//cellDungeon.appendChild(dungeonImg);
+				//cellDungeon.appendChild(hoverDungeonText);
+			}
+				playerDiv.appendChild(cellDungeon);
+		}
+		
+
+		// Build the cutoff row.
+		async function cutOffScoreRow(scoreDiv){
+			var cutoffURL = "https://raider.io/api/v1/mythic-plus/season-cutoffs?season=season-mn-1&region=us";
+			var response_cutoff = await fetch(cutoffURL);
+			var data_cutoff = await response_cutoff.json();
+			//label
+			let cutOffLabel = document.createElement("td");
+			setElementStyle(cutOffLabel)
+			cutOffLabel.style.width = "120px"
+			cutOffLabel.style.height = "30px"
+			let cutOffLabelText = document.createTextNode("Top 1%:");
+			cutOffLabel.appendChild(cutOffLabelText);
+			scoreDiv.appendChild(cutOffLabel);
+			//score
+			let cutOffScore = document.createElement("td");
+			setElementStyle(cutOffScore)
+			cutOffScore.style.width = "80px"
+			cutOffScore.style.height = "30px"
+			let cutOffText = document.createTextNode(data_cutoff.cutoffs.p990.all.quantileMinValue);
+			cutOffScore.appendChild(cutOffText);
+			scoreDiv.appendChild(cutOffScore);
+			//key levels
+			let cutOffKeyLevel = document.createElement("td");
+			setElementStyle(cutOffKeyLevel)
+			cutOffKeyLevel.style.width = "120px"
+			cutOffKeyLevel.style.height = "30px"
+			var increaseLevelBy = (data_cutoff.cutoffs.p990.all.quantileMinValue - 2920)/8/15
+			var baseKeyLevel = 12 + Math.floor(increaseLevelBy)
+			var numberOfNextLevel = Math.ceil((increaseLevelBy - Math.floor(increaseLevelBy))*8)
+			var keyLevelString = baseKeyLevel + "s   -   " + numberOfNextLevel + "x " + (baseKeyLevel+1) + "s"
+			let cutOffKeyLevelText = document.createTextNode(keyLevelString);
+			cutOffKeyLevel.appendChild(cutOffKeyLevelText);
+			scoreDiv.appendChild(cutOffKeyLevel);
+		}
+		
+		getHighLowScore();
+
+        </script>
+        </body>
+
+</html>
