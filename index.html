@@ -243,7 +243,7 @@
    Just paste their raider.io profile URL into the right list.
    ===================================================================== */
 const CONFIG = {
-  season: "season-mn-1",      // <-- update at the start of each season
+  season: "season-mn-2",      // <-- update at the start of each season
   region: "us",
   cacheMinutes: 10,
 
@@ -304,6 +304,65 @@ const CLASS_COLORS = {
   "Rogue": "#FFF569", "Shaman": "#0070DE", "Warlock": "#8787ED",
   "Warrior": "#C79C6E"
 };
+
+/* =====================================================================
+   Dungeon color mapping — colors are assigned by each dungeon's
+   alphabetical position (by its 2-4 letter shorthand), NOT by score.
+   Built once per data load so the same dungeon always gets the same
+   color everywhere on the page.
+   ===================================================================== */
+let dungeonColorMap = {};
+
+function getDungeonLabel(run){
+  return run.short_name || (run.dungeon || "").split(" ").map(w=>w[0]).join("").slice(0,3).toUpperCase();
+}
+
+function buildDungeonColorMap(allEntries){
+  const namesSet = new Set();
+  allEntries.forEach(e => {
+    if(e.error) return;
+    (e.data.mythic_plus_best_runs || []).forEach(run => namesSet.add(getDungeonLabel(run)));
+  });
+  const names = Array.from(namesSet).sort((a, b) => a.localeCompare(b));
+  const map = {};
+  names.forEach((name, i) => {
+    map[name] = names.length > 1 ? i / (names.length - 1) : 0.5;
+  });
+  return map;
+}
+
+// Groups pips that would visually collide (based on how close their
+// horizontal position is) and staggers them vertically, so two dungeons
+// with near-identical scores don't just stack on top of each other.
+// The total spread is capped at maxOffset on each side of the center
+// line, so every row can use the same fixed track height — clusters
+// with more pips just get tighter spacing instead of a taller row.
+const TRACK_MAX_OFFSET = 6; // px a pip can be pushed from center, either direction — kept small enough to fit the 46px row height
+
+function assignVerticalOffsets(pips, thresholdPct = 9, baseSpacing = 18, maxOffset = TRACK_MAX_OFFSET){
+  const sorted = [...pips].sort((a, b) => a.leftPct - b.leftPct);
+  const clusters = [];
+  let current = [];
+  sorted.forEach(p => {
+    if(current.length === 0){ current.push(p); return; }
+    const last = current[current.length - 1];
+    if(p.leftPct - last.leftPct < thresholdPct){ current.push(p); }
+    else { clusters.push(current); current = [p]; }
+  });
+  if(current.length) clusters.push(current);
+
+  clusters.forEach(cluster => {
+    const n = cluster.length;
+    if(n === 1){ cluster[0].dy = 0; return; }
+    // Use normal spacing for small clusters; shrink it once the cluster
+    // would otherwise exceed the fixed vertical room available.
+    const spacing = Math.min(baseSpacing, (2 * maxOffset) / (n - 1));
+    cluster.forEach((p, i) => {
+      const offsetIndex = i - (n - 1) / 2; // centers the stagger around the line
+      p.dy = offsetIndex * spacing;
+    });
+  });
+}
 
 /* =====================================================================
    Small cache layer (localStorage + TTL) so a page refresh doesn't
@@ -461,15 +520,34 @@ function buildPlayerRow(entry, range, totalPopulationCount){
   row.style.borderLeftColor = color;
 
   const runs = (d.mythic_plus_best_runs || []);
-  const trackPips = runs.map(run => {
+
+  // Position (left%) is still driven by score, low -> high left -> right.
+  // Color is driven by the dungeon's alphabetical rank, independent of score.
+  const pipsData = runs.map(run => {
     let pct01 = (run.score - range.low) / (range.high - range.low || 1);
     pct01 = Math.max(0, Math.min(1, pct01));
     const leftPct = 5 + pct01 * 90; // keep pips within padded bounds so they don't clip edges
-    const bg = scoreToColor(pct01);
-    const label = run.short_name || (run.dungeon || "").split(" ").map(w=>w[0]).join("").slice(0,3).toUpperCase();
-    const textColor = pct01 > 0.6 ? "#1a1408" : "#e9e7e0";
+    const label = getDungeonLabel(run);
+    const colorPct = dungeonColorMap[label] ?? 0.5;
+    const bg = scoreToColor(colorPct);
+    const textColor = colorPct > 0.6 ? "#1a1408" : "#e9e7e0";
+    return { run, leftPct, label, bg, textColor, dy: 0 };
+  });
+
+  // Stagger pips vertically when their scores (and therefore horizontal
+  // position) are close enough to overlap, so all of them stay visible.
+  // Offsets are capped, so every row uses the same fixed track height.
+  assignVerticalOffsets(pipsData);
+
+  // Stack order: higher-scoring runs always render on top of lower ones
+  // when two pips overlap.
+  const byScoreAsc = [...pipsData].sort((a, b) => a.run.score - b.run.score);
+  byScoreAsc.forEach((p, i) => { p.z = i + 1; });
+
+  const trackPips = pipsData.map(p => {
+    const run = p.run;
     return `<div class="dungeon-pip" title="${run.dungeon} — ${run.score} (+${run.num_keystone_upgrades || 0})"
-              style="left:${leftPct}%; background:${bg}; color:${textColor};">${label}</div>`;
+              style="left:${p.leftPct}%; top:calc(50% + ${p.dy}px); background:${p.bg}; color:${p.textColor}; z-index:${p.z};">${p.label}</div>`;
   }).join("");
 
   row.innerHTML = `
@@ -629,6 +707,7 @@ async function loadAll(){
   });
 
   lastData = { allEntries, cutoffs };
+  dungeonColorMap = buildDungeonColorMap(allEntries);
   renderStats(cutoffs);
   renderAll();
 
