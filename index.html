@@ -112,7 +112,7 @@
   .team-header h2{
     font-family: 'Cinzel', serif;
     font-weight: 500;
-    font-size: 17px;
+    font-size: 21.25px;
     margin: 0;
     color: var(--text-primary);
   }
@@ -267,13 +267,27 @@ const CONFIG = {
         "https://raider.io/characters/us/silver-hand/Cenjeru",
         "https://raider.io/characters/us/sargeras/Zarmage"
       ]
+    },
+    {
+      name: "Team C<span style=\"font-size:0.4em; color:#6b7288;\">oconut</span>",
+      urls: [
+        "https://raider.io/characters/us/dathremar/Kithrah",
+        "https://raider.io/characters/us/khazgoroth/Quiksilver",
+        "https://raider.io/characters/us/khazgoroth/Baindage",
+        "https://raider.io/characters/us/frostmourne/Rethard",
+        "https://raider.io/characters/us/khazgoroth/Hungter"
+      ]
     }
   ],
 
-  notableMentions: [
-    "https://raider.io/characters/us/scarlet-crusade/Samsonknight",
-    "https://raider.io/characters/us/sargeras/Zieavqdh"
-  ]
+  // --- Notable mentions (disabled — commented out, not deleted, so it's
+  // easy to bring back later. To re-enable: uncomment this array and the
+  // three usage blocks below, each marked "NOTABLE MENTIONS BLOCK". ---
+  // notableMentions: [
+  //   "https://raider.io/characters/us/scarlet-crusade/Samsonknight",
+  //   "https://raider.io/characters/us/sargeras/Zieavqdh"
+  // ]
+  notableMentions: []
 };
 
 /* =====================================================================
@@ -439,7 +453,10 @@ async function fetchCutoffs(){
 function renderSkeleton(){
   const container = document.getElementById("teamsContainer");
   container.innerHTML = "";
-  [...CONFIG.teams, { name: "Notable mentions", urls: CONFIG.notableMentions }].forEach(team => {
+  // NOTABLE MENTIONS BLOCK (disabled): to bring back the skeleton row for
+  // notable mentions, restore the spread below to:
+  // [...CONFIG.teams, { name: "Notable mentions", urls: CONFIG.notableMentions }]
+  [...CONFIG.teams].forEach(team => {
     const section = document.createElement("div");
     section.className = "team-section";
     const card = document.createElement("div");
@@ -632,8 +649,9 @@ let lastData = null; // { entries: [{url, data|error}], cutoffs }
 function renderAll(){
   if(!lastData) return;
   const { allEntries, cutoffs } = lastData;
-  // Axis bounds are based on the two teams only — notable mentions are
-  // shown on this same axis but don't stretch or shrink it.
+  // Axis bounds are based on the teams only — notable mentions (disabled,
+  // see NOTABLE MENTIONS BLOCK) would be shown on this same axis but
+  // wouldn't stretch or shrink it.
   const teamUrls = CONFIG.teams.flatMap(t => t.urls);
   const teamEntries = allEntries.filter(e => teamUrls.includes(e.url));
   const range = computeGlobalRange(teamEntries);
@@ -648,9 +666,10 @@ function renderAll(){
     renderTeamSection(container, team.name, entries, range, totalPopulationCount, mode);
   });
 
-  const nmEntries = allEntries.filter(e => CONFIG.notableMentions.includes(e.url));
-  const nmMode = teamSortState["Notable mentions"] || "score-desc";
-  renderTeamSection(container, "Notable mentions", nmEntries, range, totalPopulationCount, nmMode);
+  // NOTABLE MENTIONS BLOCK (disabled): uncomment to bring the section back.
+  // const nmEntries = allEntries.filter(e => CONFIG.notableMentions.includes(e.url));
+  // const nmMode = teamSortState["Notable mentions"] || "score-desc";
+  // renderTeamSection(container, "Notable mentions", nmEntries, range, totalPopulationCount, nmMode);
 }
 
 function renderStats(cutoffs){
@@ -688,9 +707,11 @@ async function loadAll(){
   document.getElementById("cacheMinsText").textContent = CONFIG.cacheMinutes;
   renderSkeleton();
 
+  // NOTABLE MENTIONS BLOCK (disabled): uncomment the spread below to also
+  // fetch notable-mentions players.
   const allUrls = [
-    ...CONFIG.teams.flatMap(t => t.urls),
-    ...CONFIG.notableMentions
+    ...CONFIG.teams.flatMap(t => t.urls)
+    // , ...CONFIG.notableMentions
   ];
 
   const [cutoffsResult, ...playerResults] = await Promise.allSettled([
